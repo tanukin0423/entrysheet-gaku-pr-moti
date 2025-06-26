@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企業研究プロンプト生成ツール</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8; /* Light blue-grey background */
+            color: #334e68; /* Dark blue-grey text */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            box-sizing: border-box;
+            border-top: 6px solid #2196f3; /* Blue accent */
+        }
+        h1 {
+            text-align: center;
+            color: #1976d2; /* Darker blue */
+            margin-bottom: 2rem;
+            font-size: 2.2em;
+            border-bottom: 1px solid #e0e6eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1976d2;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5em;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #334e68;
+        }
+        select, input[type="text"] {
+            width: calc(100% - 22px); /* Adjust for padding and border */
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid #c9d8e6; /* Light grey border */
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: #fcfdff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        select:focus, input[type="text"]:focus {
+            border-color: #2196f3; /* Blue focus */
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+        button {
+            background: #2196f3; /* Blue button */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin-right: 15px; /* Spacing between buttons */
+        }
+        button:hover {
+            background: #1976d2; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #prompt-output-area {
+            background: #e3f2fd; /* Lighter blue background for output */
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #334e68;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+            min-height: 150px;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.5s ease;
+        }
+        #prompt-output-area.visible {
+            opacity: 1;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        .button-group button {
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            min-width: 180px; /* Minimum width for readability */
+        }
+        .copy-success {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: #28a745; /* Green for success */
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            vertical-align: middle;
+        }
+        .copy-success.copied::before {
+            content: "✓ ";
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .button-group {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+            }
+            .button-group button {
+                width: 100%;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>企業研究プロンプト生成ツール</h1>
+
+        <p>企業研究を効率的に進めるためのプロンプト（質問リスト）を生成します。業界と職種を選択し、必要な情報量に応じて「簡易版」または「詳細版」を選んでください。</p>
+
+        <h2>選択項目</h2>
+        <div>
+            <label for="companyName">企業名:</label>
+            <input type="text" id="companyName" placeholder="例：株式会社〇〇">
+        </div>
+        <div>
+            <label for="industrySelect">業界:</label>
+            <select id="industrySelect">
+                <option value="">選択してください</option>
+                <option value="IT・ソフトウェア">IT・ソフトウェア</option>
+                <option value="Web・インターネット">Web・インターネット</option>
+                <option value="メーカー（電気・機械・精密機器）">メーカー（電気・機械・精密機器）</option>
+                <option value="メーカー（食品・飲料・消費財）">メーカー（食品・飲料・消費財）</option>
+                <option value="商社">商社</option>
+                <option value="コンサルティング">コンサルティング</option>
+                <option value="金融">金融</option>
+                <option value="広告・メディア">広告・メディア</option>
+                <option value="医療・福祉">医療・福祉</option>
+                <option value="建設・不動産">建設・不動産</option>
+                <option value="サービス">サービス</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+        <div>
+            <label for="jobTypeSelect">職種:</label>
+            <select id="jobTypeSelect">
+                <option value="">選択してください</option>
+                <option value="営業">営業</option>
+                <option value="エンジニア（開発）">エンジニア（開発）</option>
+                <option value="マーケティング">マーケティング</option>
+                <option value="企画">企画</option>
+                <option value="コンサルタント">コンサルタント</option>
+                <option value="事務・管理部門">事務・管理部門</option>
+                <option value="研究開発">研究開発</option>
+                <option value="デザイナー">デザイナー</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button onclick="generatePrompt('simple')">簡易版プロンプト生成</button>
+            <button onclick="generatePrompt('detailed')">詳細版プロンプト生成</button>
+            <button onclick="copyOutput()">プロンプトをコピー <span id="copy-success" class="copy-success"></span></button>
+        </div>
+
+        <h2>生成されたプロンプト</h2>
+        <div id="prompt-output-area">
+            ↑上記の選択肢を選んでボタンを押してください。
+        </div>
+
+    </div>
+
+    <script>
+        function generatePrompt(version) {
+            const companyName = document.getElementById('companyName').value.trim();
+            const industry = document.getElementById('industrySelect').value;
+            const jobType = document.getElementById('jobTypeSelect').value;
+            const outputArea = document.getElementById('prompt-output-area');
+            let promptText = '';
+
+            if (!companyName && (!industry || !jobType)) {
+                outputArea.textContent = '企業名、または業界と職種の両方を選択してください。';
+                outputArea.classList.add('visible');
+                return;
+            }
+
+            let header = `## ${companyName ? companyName + 'の' : ''}企業研究プロンプト (${version === 'simple' ? '簡易版' : '詳細版'})\n\n`;
+            if (companyName) {
+                header += `あなたは${companyName}に興味を持っている就活生です。\n`;
+            }
+            if (industry) {
+                header += `${industry}業界の企業について、\n`;
+            }
+            if (jobType) {
+                header += `${jobType}職の観点から企業研究を進めたいと考えています。\n\n`;
+            }
+            header += `以下の質問項目に沿って、インターネットや企業のIR情報、採用ページ、ニュース記事などを活用し、${companyName ? companyName : 'この企業'}についての情報を深掘りしてください。\n\n`;
+
+            if (version === 'simple') {
+                promptText = `${header}` +
+                    `### 基本情報\n` +
+                    `- 企業名: ${companyName || '【企業名】'}\n` +
+                    `- 業界: ${industry || '【業界名】'}\n` +
+                    `- 主要事業内容と主な製品・サービスは何ですか？\n` +
+                    `- 企業理念やビジョンは何ですか？\n\n` +
+                    `### 業界・市場\n` +
+                    `- 業界全体の市場規模や成長性はどうですか？\n` +
+                    `- 競合他社はどこで、${companyName || 'この企業'}の強みや差別化ポイントは何ですか？\n\n` +
+                    `### 職種関連 (${jobType || '【職種名】'})\n` +
+                    `- ${jobType || 'この職種'}の具体的な仕事内容や役割は何ですか？\n` +
+                    `- ${jobType || 'この職種'}で求められるスキルや経験は何ですか？\n\n` +
+                    `### 企業文化・働き方\n` +
+                    `- 社風や働き方の特徴は何ですか？\n` +
+                    `- 研修制度やキャリアパスについて、どのような情報がありますか？\n\n` +
+                    `### その他\n` +
+                    `- 直近のニュースやトピックで注目すべきことはありますか？\n` +
+                    `- あなたがこの企業に惹かれる点は何ですか？\n`;
+            } else { // detailed
+                promptText = `${header}` +
+                    `### 1. 企業概要と基本情報\n` +
+                    `- 企業名: ${companyName || '【企業名】'}\n` +
+                    `- 設立年、本社所在地、上場状況（上場・非上場）\n` +
+                    `- 資本金、従業員数\n` +
+                    `- 企業理念、ビジョン、ミッション、経営戦略\n` +
+                    `- 主要事業、製品・サービスの詳細、その市場での位置づけ\n` +
+                    `- ターゲット顧客層と主な販売チャネル\n` +
+                    `- 過去3〜5年間の業績推移（売上高、営業利益など）と今後の事業計画\n\n` +
+                    `### 2. 業界・市場分析\n` +
+                    `- 業界全体の動向、市場規模、成長性、将来性\n` +
+                    `- 主要な競合他社はどこか、それぞれの強みと弱み\n` +
+                    `- ${companyName || 'この企業'}の業界内でのポジショニングと競争優位性（SWOT分析も考慮）\n` +
+                    `- 業界特有のトレンドや課題、技術革新が与える影響\n` +
+                    `- 法規制や社会情勢が業界に与える影響\n\n` +
+                    `### 3. 職種に関する深掘り (${jobType || '【職種名】'})\n` +
+                    `- ${jobType || 'この職種'}の具体的な業務内容、一日の流れ、年間スケジュール\n` +
+                    `- ${jobType || 'この職種'}における主要なKPIや達成目標\n` +
+                    `- ${jobType || 'この職種'}で求められる専門スキル、知識、経験、資格\n` +
+                    `- ${jobType || 'この職種'}のキャリアパス（例：マネージャー、スペシャリスト、他部署への異動など）\n` +
+                    `- チーム体制や部署間の連携について\n` +
+                    `- どのような課題に直面し、それをどう解決しているか（具体的な事例があれば）\n\n` +
+                    `### 4. 企業文化・組織風土\n` +
+                    `- 社風や企業文化（例：挑戦的、協調性重視、成果主義など）\n` +
+                    `- 従業員の平均年齢、男女比、離職率\n` +
+                    `- 評価制度、給与体系、福利厚生の詳細\n` +
+                    `- 研修制度、自己啓発支援、資格取得支援など、社員の成長を促す取り組み\n` +
+                    `- ダイバーシティ＆インクルージョンへの取り組み\n` +
+                    `- ワークライフバランスに関する情報（残業時間、有給取得率など）\n\n` +
+                    `### 5. 採用情報とマッチング\n` +
+                    `- 募集職種の詳細、応募資格、選考プロセス\n` +
+                    `- 求める人物像や採用基準（具体的な行動特性など）\n` +
+                    `- あなた自身の経験やスキルが、${companyName || 'この企業'}の${jobType || 'この職種'}でどのように活かせるか\n` +
+                    `- ${companyName || 'この企業'}に入社して、どのような貢献をしたいか、どのようなキャリアを築きたいか\n\n` +
+                    `### 6. その他注目点\n` +
+                    `- CSR（企業の社会的責任）活動やサステナビリティへの取り組み\n` +
+                    `- 最新のニュースリリース、プレス発表、メディア掲載情報\n` +
+                    `- 企業が抱える潜在的な課題や今後のリスク要因（もしあれば）\n` +
+                    `- あなたが${companyName || 'この企業'}について特に知りたい、疑問に思っていること\n`;
+            }
+            outputArea.textContent = promptText;
+            outputArea.classList.add('visible'); // Make it visible when content is generated
+        }
+
+        function copyOutput() {
+            const outputText = document.getElementById('prompt-output-area').textContent;
+            const copySuccessSpan = document.getElementById('copy-success');
+
+            // Reset state
+            copySuccessSpan.className = 'copy-success';
+            copySuccessSpan.style.opacity = '0';
+
+            if (outputText.trim() === '↑上記の選択肢を選んでボタンを押してください。' || outputText.trim() === '') {
+                 alert("コピーする内容がありません。先にプロンプトを生成してください。");
+                 return;
+            }
+
+            navigator.clipboard.writeText(outputText).then(() => {
+                copySuccessSpan.textContent = 'コピーしました！';
+                copySuccessSpan.classList.add('copied');
+                copySuccessSpan.style.opacity = '1';
+                setTimeout(() => { copySuccessSpan.style.opacity = '0'; }, 3000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                copySuccessSpan.textContent = 'コピー失敗しました';
+                copySuccessSpan.style.opacity = '1';
+                setTimeout(() => { copySuccessSpan.style.opacity = '0'; }, 3000);
+                alert("クリップボードへのコピーに失敗しました。お使いのブラウザが対応していないか、セキュリティ設定をご確認ください。");
+            });
+        }
+    </script>
+</body>
+</html>
