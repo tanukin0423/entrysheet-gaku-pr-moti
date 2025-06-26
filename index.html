@@ -25,6 +25,8 @@
       border-radius: 10px; /* Rounded corners for body content area */
       background: #f0f4f8; /* Keep background color for the content area */
       box-sizing: border-box; /* Include padding in width */
+      position: relative; /* Added for login overlay positioning */
+      display: none; /* 初期状態では非表示 (ログイン成功後に表示される) */
     }
 
     /* デフォルトテーマ（ブルー） */
@@ -390,6 +392,101 @@
         background: var(--main-dark);
     }
 
+    /* Login Overlay Styles */
+    #login-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000; /* Higher than other overlays */
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    #login-overlay.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+    .login-box {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        text-align: center;
+        max-width: 90%;
+        width: 450px;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+    /* #login-overlay.hidden .login-box is not needed as content is hidden with overlay */
+    .login-box h2 {
+        margin-top: 0;
+        color: var(--main-dark);
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    .login-box input[type="email"] {
+        width: calc(100% - 2rem);
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .login-box button {
+        background: var(--main-color);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+        width: 100%;
+    }
+    .login-box button:hover {
+        background: var(--main-dark);
+    }
+    .login-error {
+        color: #f44336;
+        margin-top: 10px;
+        font-weight: bold;
+        display: none;
+    }
+    .login-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .login-header h1 {
+      margin: 0;
+    }
+    #logout-button {
+      background: #f44336; /* Red for logout */
+      color: white;
+      border: none;
+      /* width: 20%; */ /* 以前の幅は削除 */
+      padding: 0.4rem 0.8rem; /* 幅に合わせて調整 */
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+      font-size: 0.9rem;
+      display: none; /* Hidden until logged in */
+      width: 20%; /* ログアウトボタンの幅を親要素の20%に設定 */
+      box-sizing: border-box; /* Paddingとborderをwidthに含める */
+      text-align: center; /* テキストを中央寄せ */
+    }
+    #logout-button:hover {
+      background: #d32f2f;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 1024px) { /* 画面幅が1024px以下の場合の調整 */
       .main-content {
@@ -402,18 +499,50 @@
       .button-container button, .ai-review-buttons button {
         min-width: unset;
       }
+      #logout-button {
+        width: 30%; /* 小さい画面では少し幅を広げる */
+      }
     }
     @media (max-width: 600px) {
       .main-content {
         padding: 1rem;
+      }
+      .login-box {
+        padding: 1.5rem;
+      }
+      .login-box h2 {
+        font-size: 1.5rem;
+      }
+      .login-box input[type="email"] {
+        padding: 0.8rem;
+      }
+      .login-box button {
+        padding: 0.8rem 1.5rem;
+      }
+      #logout-button {
+        width: 40%; /* さらに小さい画面ではさらに幅を広げる */
       }
     }
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="theme-gakuchika">
-  <div class="main-content">
-    <h1>エントリーシート作成ツール</h1>
+  <!-- Login Overlay: ページロード時に表示されるログイン画面 -->
+  <div id="login-overlay">
+    <div class="login-box">
+      <h2>ログイン</h2>
+      <p>このツールは多摩大学の学生向けのプログラムです。<span style="font-weight: bold;">@tama.ac.jp</span> ドメインのメールアドレスでログインしてください。</p>
+      <input type="email" id="email-input" placeholder="学籍番号イニシャル@tama.ac.jp" required>
+      <button onclick="window.handleLogin()">ログイン</button>
+      <div id="login-error" class="login-error">無効なメールアドレスです。@tama.ac.jp ドメインのメールアドレスを使用してください。</div>
+    </div>
+  </div>
+
+  <div class="main-content" id="main-content"> <!-- idを追加 -->
+    <div class="login-header">
+      <h1>エントリーシート作成ツール</h1>
+      <button id="logout-button" onclick="window.handleLogout()">ログアウト</button>
+    </div>
 
     <div class="intro-section">
       <h2>✏️ ツールの使い方</h2>
@@ -665,7 +794,7 @@
       });
       
       if (!isValid) {
-        window.showMessageBox("入力不備", "全ての項目を入力してください。赤枠で表示されています。");
+        window.showMessageBox("入力不備", "全ての項目に入力してください。赤枠で表示されています。");
         return;
       }
       
@@ -842,6 +971,74 @@
       URL.revokeObjectURL(url);
       window.showMessageBox("保存完了", "エントリーシートの内容をテキストファイルとして保存しました。");
     }
+
+    // --- ログイン機能（クライアントサイドのみの簡易版、セキュリティは非常に低いです） ---
+    // この実装はあくまでデモンストレーションであり、本番環境での使用には適していません。
+    // 悪意のあるユーザーは容易にバイパスできます。
+    const LOGIN_KEY = "isLoggedInTamaU"; // ログイン状態を保存するlocalStorageのキー
+    const ALLOWED_DOMAIN = "@tama.ac.jp"; // 許可するメールアドレスのドメイン
+
+    /**
+     * ログイン処理を行います。
+     * 入力されたメールアドレスが許可されたドメインと一致するかをチェックします。
+     */
+    window.handleLogin = function() {
+      const emailInput = document.getElementById("email-input");
+      const loginError = document.getElementById("login-error");
+      const email = emailInput.value.trim();
+
+      if (email.endsWith(ALLOWED_DOMAIN)) {
+        localStorage.setItem(LOGIN_KEY, "true"); // ログイン状態を永続化
+        loginError.style.display = "none"; // エラーメッセージを非表示
+        document.getElementById("login-overlay").classList.add("hidden"); // ログイン画面を非表示
+        document.getElementById("main-content").style.display = "block"; // メインコンテンツを表示
+        document.getElementById("logout-button").style.display = "block"; // ログアウトボタンを表示
+      } else {
+        loginError.style.display = "block"; // エラーメッセージを表示
+      }
+    };
+
+    /**
+     * ログアウト処理を行います。
+     * ログイン状態をクリアし、ログイン画面を再表示します。
+     */
+    window.handleLogout = function() {
+      localStorage.removeItem(LOGIN_KEY); // ログイン状態を削除
+      document.getElementById("login-overlay").classList.remove("hidden"); // ログイン画面を表示
+      document.getElementById("main-content").style.display = "none"; // メインコンテンツを非表示
+      document.getElementById("logout-button").style.display = "none"; // ログアウトボタンを非表示
+    };
+
+    /**
+     * ページのロード時にログイン状態をチェックし、表示を切り替えます。
+     * setTimeoutを使用して、DOM要素が確実にロードされた後に処理を実行します。
+     */
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { // Wrap in setTimeout to ensure all DOM elements are fully rendered/available
+        const loginOverlay = document.getElementById("login-overlay");
+        const mainContent = document.getElementById("main-content");
+        const logoutButton = document.getElementById("logout-button");
+
+        // nullチェックを追加して、要素が存在することを確認
+        if (loginOverlay && mainContent && logoutButton) {
+          if (localStorage.getItem(LOGIN_KEY) === "true") {
+            loginOverlay.classList.add("hidden");
+            mainContent.style.display = "block";
+            logoutButton.style.display = "block";
+          } else {
+            loginOverlay.classList.remove("hidden");
+            mainContent.style.display = "none";
+            logoutButton.style.display = "none";
+          }
+        } else {
+          console.error("Error: ログイン/ログアウト機能に必要なDOM要素が見つかりませんでした。");
+          console.error("loginOverlay:", loginOverlay);
+          console.error("mainContent:", mainContent);
+          console.error("logoutButton:", logoutButton);
+        }
+      }, 0); // 0msの遅延
+    });
+
   </script>
 </body>
 </html>
